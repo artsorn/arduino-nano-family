@@ -14,12 +14,26 @@ bool dht_start(unsigned long current_millis);
 
 bool relay_init();
 bool relay_toggle(int channel);
+bool relay_high(int channel);
+bool relay_low(int channel);
 
 bool switch_button_init();
 bool switch_button_start(unsigned long current_millis);
 
 bool switch_float_init();
 bool switch_float_start(unsigned long current_millis);
+
+int shower_heater_level = 0; // 0 time
+int shower_heater_state = 0; // 0 prepair, 1 ready, 2 water in, 3 boiling, 4 water out
+
+unsigned long shower_heater_boiling_start_millis = 0;
+const long shower_heater_boiling_period =60000; // 1 min
+unsigned long shower_heater_waterout_start_millis = 0;
+const long shower_heater_waterout_period = 30000; // 30 sec
+
+// relay channel 1 >>> button
+// relay channel 2 >>> water in
+// relay channel 3 >>> water out
 
 void setup() {
   // put your setup code here, to run once:
@@ -40,6 +54,10 @@ void setup() {
 
   // pinMode(switch_float_pin_1, INPUT_PULLUP);
   // pinMode(switch_button_pin_1, INPUT_PULLUP);
+
+  shower_heater_state = 1;
+  
+  relay_high(1);
 }
 
 void loop() {
@@ -63,6 +81,52 @@ void loop() {
   // bool is_tracker_detected = tracker_start(current_millis);
   bool is_switch_button_detected = switch_button_start(current_millis);
   bool is_switch_float_detected = switch_float_start(current_millis);
+
+  if (is_switch_button_detected == true && shower_heater_level <= 2 ) {
+    shower_heater_level = shower_heater_level + 1;
+  }
+
+  if (shower_heater_level > 0) {
+    if (shower_heater_state == 1 && is_switch_button_detected == true) {
+      Serial.print("Water in! > ");
+      Serial.println(String(shower_heater_level));
+      shower_heater_state = 2; // water in
+      relay_low(1);
+      relay_high(2);
+    } else if (shower_heater_state == 2 && is_switch_float_detected == true) {
+      
+      Serial.print("Boiling! > ");
+      Serial.println(String(shower_heater_level));
+      shower_heater_state = 3; // boiling
+      relay_low(2);
+      shower_heater_boiling_start_millis = current_millis;
+    } else if (shower_heater_state == 3 && current_millis - shower_heater_boiling_start_millis > shower_heater_boiling_period) {
+      Serial.print("Water out! > ");
+      Serial.println(String(shower_heater_level));
+      shower_heater_state = 4; // water out
+      relay_high(3);
+      shower_heater_waterout_start_millis = current_millis;
+    } else if (shower_heater_state == 4 && current_millis - shower_heater_waterout_start_millis > shower_heater_waterout_period) {
+      
+      shower_heater_level = shower_heater_level - 1;
+      
+      if (shower_heater_level > 0) { // loop
+        Serial.print("Water in! > ");
+        Serial.println(String(shower_heater_level));
+        shower_heater_state = 2; // water in
+        relay_low(1);
+        relay_high(2);
+      } else {
+        Serial.print("Success! > ");
+        Serial.println(String(shower_heater_level));
+        shower_heater_state = 1; // Success
+        relay_high(1);
+        relay_low(3);
+      }
+      
+    }
+  }
+  
 
   if (Serial.available() > 0) {
       char input = Serial.read();

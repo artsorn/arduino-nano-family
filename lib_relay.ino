@@ -22,11 +22,7 @@ bool relay_init() {
   return true;
 }
 
-bool relay_toggle(int channel) {
-
-  Serial.print("relay: ");
-  Serial.print(String(channel));
-
+int relay_pin(int channel) {
   int pin_channel;
   if (channel == 1) {
     pin_channel = relay_pin_1;
@@ -38,10 +34,30 @@ bool relay_toggle(int channel) {
     pin_channel = relay_pin_4;
   } else if (channel == 5) {
     pin_channel = relay_pin_5;
-  } else {
-  Serial.println(", status: err");
-    return false;
   }
+  return pin_channel;
+}
+
+bool relay_toggle(int channel) {
+
+  Serial.print("relay: ");
+  Serial.print(String(channel));
+
+  int pin_channel = relay_pin(channel);
+  // if (channel == 1) {
+  //   pin_channel = relay_pin_1;
+  // } else if (channel == 2) {
+  //   pin_channel = relay_pin_2;
+  // } else if (channel == 3) {
+  //   pin_channel = relay_pin_3;
+  // } else if (channel == 4) {
+  //   pin_channel = relay_pin_4;
+  // } else if (channel == 5) {
+  //   pin_channel = relay_pin_5;
+  // } else {
+  // Serial.println(", status: err");
+  //   return false;
+  // }
   int relay_val = digitalRead(pin_channel);
 
   Serial.print(", status: ");
@@ -54,3 +70,19 @@ bool relay_toggle(int channel) {
   }
   return true;
 }
+
+
+bool relay_high(int channel) {
+  int pin_channel = relay_pin(channel);
+  digitalWrite(pin_channel, HIGH);
+  return true;
+}
+
+bool relay_low(int channel) {
+  int pin_channel = relay_pin(channel);
+  digitalWrite(pin_channel, LOW);
+  return true;
+}
+
+
+

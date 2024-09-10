@@ -35,7 +35,6 @@ bool switch_button_start(unsigned long current_millis) {
   if (switch_button_val == LOW) {           // check if the sensor is LOW
     if (switch_button_state == HIGH) {
       Serial.println("switch_button detected!"); 
-      relay_toggle(1);
       switch_button_state = LOW;       // update variable switch_button_state to LOW
       return true;
     }

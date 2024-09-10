@@ -35,7 +35,6 @@ bool switch_float_start(unsigned long current_millis) {
   if (switch_float_val == LOW) {           // check if the sensor is LOW
     if (switch_float_state == HIGH) {
       switch_float_state = LOW;       // update variable switch_float_state to LOW
-      return true;
     }
   } else {
       delay(200);             // delay 200 milliseconds 
@@ -43,6 +42,7 @@ bool switch_float_start(unsigned long current_millis) {
       Serial.println("switch_float detected!"); 
         // Serial.println("Motion stopped!");
         switch_float_state = HIGH;       // update variable state to HIGH
+      return true;
     }
   }
   return false;
