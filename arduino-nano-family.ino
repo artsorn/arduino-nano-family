@@ -2,6 +2,14 @@
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 
+int doorPin = 2;
+int led1 = 5; // กำหนดขาใช้งาน
+const int buttonPin = 6;
+int buttonState = 0;
+
+const int potPin = 1;
+//Variables:
+int potValue = 0; //save analog value
 // สร้าง Object สำหรับโมดูล PCA9685 ให้ชื่อ pwm ค่า Address คือ Default (0x40)
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x40); 
 
@@ -76,6 +84,12 @@ void setup() {
     // pwm.setPWM(15, 4096, 0);       // turns pin fully on
     // delay(100);
     // pwm.setPWM(15, 0, 4096);       // turns pin fully off
+
+    pinMode(led1, OUTPUT); // กำหนดขาทำหน้าที่ให้ขา 2 เป็น OUTPUT
+    pinMode(buttonPin, INPUT);// กำหนดขาทำหน้าที่ให้ขา 3 เป็น INPUT รับค่าจากสวิตช์
+    pinMode(doorPin, INPUT_PULLUP);
+    pinMode(potPin, INPUT); //Optional 
+    // digitalWrite(led1, LOW);
 }
 
 void setServoAngle(uint8_t servoNum, int angle) {
@@ -84,10 +98,37 @@ void setServoAngle(uint8_t servoNum, int angle) {
 }
 
 void loop() {
+
+  int potval = analogRead(potPin);          //Read and save analog value from potentiometer
+  potval = map(potval, 0, 1023, 0, 255); //Map value 0-1023 to 0-255 (PWM)
+  // analogWrite(ledPin, value);
+  if (potval != potValue) { 
+    potValue = potval;
+    Serial.print("potValue > ");
+    Serial.println(String(potValue));
+  }
+
+  buttonState = digitalRead(buttonPin); // อ่านค่าสถานะขา3
+  // Serial.print("buttonState > ");
+  // Serial.println(String(buttonState));
+  int doorState  = digitalRead(doorPin);
+  if (doorState == LOW) { 
+    digitalWrite(led1, HIGH); 
+    // Serial.print("doorState > ");
+    // Serial.println(String(doorState));
+  } else {
+    if (buttonState == HIGH) { //กำหนดเงื่อนไขถ้าตัวแปล buttonState เก็บ ค่า 1(HIGH) ให้ทำในปีกกา
+      digitalWrite(led1, HIGH); // ไฟ LED 1ติด
+    }
+    else { //ถ้าตัวแปล buttonState ไม่ได้เก็บ ค่า 1(HIGH) คือ ตัวแปล buttonState เก็บค่า 0(LOW) อยู่ ให้ทำปีกกาข้างล่าง
+      digitalWrite(led1, LOW); // ไฟ LED 1ดับ
+    }
+  }
+
   
   // // หมุนเซอร์โวไปยังมุม 180 องศา
   // setServoAngle(15, 180); 
-  // delay(5000);
+  // delay(3000);
 
   // int switch_float_val_1 = digitalRead(switch_float_pin_1);
   // if (switch_float_val_1 == HIGH)
@@ -191,6 +232,6 @@ void loop() {
   //   // ควบคุมเซอร์โวที่ CH0 และ CH15
   //   // pwm.setPWM(0, 0, pulse);
   //   pwm.setPWM(15, 0, pulse);
-  // delay(5);
+  delay(100);
   // }
 }
