@@ -2,15 +2,15 @@
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 
-int doorPin = 2;
-int led1 = 5; // กำหนดขาใช้งาน
-const int buttonPin = 6;
-int buttonState = 0;
+// int doorPin = 2;
+// int led1 = 5; // กำหนดขาใช้งาน
+// const int buttonPin = 6;
+// int buttonState = 0;
 
-const int potPin = 1;
-//Variables:
-int potValue = 0; //save analog value
-// สร้าง Object สำหรับโมดูล PCA9685 ให้ชื่อ pwm ค่า Address คือ Default (0x40)
+// const int potPin = 1;
+// //Variables:
+// int potValue = 0; //save analog value
+// // สร้าง Object สำหรับโมดูล PCA9685 ให้ชื่อ pwm ค่า Address คือ Default (0x40)
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x40); 
 
 #define servoAngle  90
@@ -37,20 +37,32 @@ bool relay_low(int channel);
 bool switch_button_init();
 bool switch_button_start(unsigned long current_millis);
 
+int switch_float_val = 0;
 bool switch_float_init();
 bool switch_float_start(unsigned long current_millis);
+int switch_float_status();
+
+
+
+// bool waterflow_init();
+// bool waterflow_start(unsigned long current_millis);
+// float waterflow_volume();
+// float waterflow_rate();
+// bool waterflow_reset();
 
 int shower_heater_level = 0; // 0 time
 int shower_heater_state = 0; // 0 prepair, 1 ready, 2 water in, 3 boiling, 4 water out
 
 unsigned long shower_heater_boiling_start_millis = 0;
-const long shower_heater_boiling_period =120000; // 2 min
+const long shower_heater_boiling_period = 195000; // 3 min 15 sec
 unsigned long shower_heater_waterout_start_millis = 0;
-const long shower_heater_waterout_period = 45000; // 45 sec
+unsigned long shower_heater_waterout_end_millis = 0;
+const long shower_heater_waterout_period = 70000; // 1 min 10 sec
+const long shower_heater_waterout_end_period = 0; // 0 sec
 
 // relay channel 1 >>> button
 // relay channel 2 >>> water in
-// relay channel 3 >>> water out
+// relay channel 3 >>> water out START
 
 void setup() {
   // put your setup code here, to run once:
@@ -63,6 +75,7 @@ void setup() {
   // tracker_init();
   switch_button_init();
   switch_float_init();
+  // waterflow_init();
 
   // bool is_dht_detected = dht_start(setup_millis);
 
@@ -80,16 +93,16 @@ void setup() {
   delay(100);
   setServoAngle(15, servoAngle); // turn off switch
   Serial.println(F("----------------- OK -------------------"));
-
+  delay(2000);
     // pwm.setPWM(15, 4096, 0);       // turns pin fully on
     // delay(100);
     // pwm.setPWM(15, 0, 4096);       // turns pin fully off
 
-    pinMode(led1, OUTPUT); // กำหนดขาทำหน้าที่ให้ขา 2 เป็น OUTPUT
-    pinMode(buttonPin, INPUT);// กำหนดขาทำหน้าที่ให้ขา 3 เป็น INPUT รับค่าจากสวิตช์
-    pinMode(doorPin, INPUT_PULLUP);
-    pinMode(potPin, INPUT); //Optional 
-    // digitalWrite(led1, LOW);
+    // pinMode(led1, OUTPUT); // กำหนดขาทำหน้าที่ให้ขา 2 เป็น OUTPUT
+    // pinMode(buttonPin, INPUT);// กำหนดขาทำหน้าที่ให้ขา 3 เป็น INPUT รับค่าจากสวิตช์
+    // pinMode(doorPin, INPUT_PULLUP);
+    // pinMode(potPin, INPUT); //Optional 
+    // // digitalWrite(led1, LOW);
 }
 
 void setServoAngle(uint8_t servoNum, int angle) {
@@ -99,31 +112,31 @@ void setServoAngle(uint8_t servoNum, int angle) {
 
 void loop() {
 
-  int potval = analogRead(potPin);          //Read and save analog value from potentiometer
-  potval = map(potval, 0, 1023, 0, 255); //Map value 0-1023 to 0-255 (PWM)
-  // analogWrite(ledPin, value);
-  if (potval != potValue) { 
-    potValue = potval;
-    Serial.print("potValue > ");
-    Serial.println(String(potValue));
-  }
+  // int potval = analogRead(potPin);          //Read and save analog value from potentiometer
+  // potval = map(potval, 0, 1023, 0, 255); //Map value 0-1023 to 0-255 (PWM)
+  // // analogWrite(ledPin, value);
+  // if (potval != potValue) { 
+  //   potValue = potval;
+  //   Serial.print("potValue > ");
+  //   Serial.println(String(potValue));
+  // }
 
-  buttonState = digitalRead(buttonPin); // อ่านค่าสถานะขา3
-  // Serial.print("buttonState > ");
-  // Serial.println(String(buttonState));
-  int doorState  = digitalRead(doorPin);
-  if (doorState == LOW) { 
-    digitalWrite(led1, HIGH); 
-    // Serial.print("doorState > ");
-    // Serial.println(String(doorState));
-  } else {
-    if (buttonState == HIGH) { //กำหนดเงื่อนไขถ้าตัวแปล buttonState เก็บ ค่า 1(HIGH) ให้ทำในปีกกา
-      digitalWrite(led1, HIGH); // ไฟ LED 1ติด
-    }
-    else { //ถ้าตัวแปล buttonState ไม่ได้เก็บ ค่า 1(HIGH) คือ ตัวแปล buttonState เก็บค่า 0(LOW) อยู่ ให้ทำปีกกาข้างล่าง
-      digitalWrite(led1, LOW); // ไฟ LED 1ดับ
-    }
-  }
+  // buttonState = digitalRead(buttonPin); // อ่านค่าสถานะขา3
+  // // Serial.print("buttonState > ");
+  // // Serial.println(String(buttonState));
+  // int doorState  = digitalRead(doorPin);
+  // if (doorState == LOW) { 
+  //   digitalWrite(led1, HIGH); 
+  //   // Serial.print("doorState > ");
+  //   // Serial.println(String(doorState));
+  // } else {
+  //   if (buttonState == HIGH) { //กำหนดเงื่อนไขถ้าตัวแปล buttonState เก็บ ค่า 1(HIGH) ให้ทำในปีกกา
+  //     digitalWrite(led1, HIGH); // ไฟ LED 1ติด
+  //   }
+  //   else { //ถ้าตัวแปล buttonState ไม่ได้เก็บ ค่า 1(HIGH) คือ ตัวแปล buttonState เก็บค่า 0(LOW) อยู่ ให้ทำปีกกาข้างล่าง
+  //     digitalWrite(led1, LOW); // ไฟ LED 1ดับ
+  //   }
+  // }
 
   
   // // หมุนเซอร์โวไปยังมุม 180 องศา
@@ -150,55 +163,122 @@ void loop() {
   bool is_switch_button_detected = switch_button_start(current_millis);
   bool is_switch_float_detected = switch_float_start(current_millis);
 
-  if (is_switch_button_detected == true && shower_heater_level <= 2 ) {
+  // if (shower_heater_state == 4 || shower_heater_state == 5) {
+  //   waterflow_start(current_millis);
+  // }
+
+  if (is_switch_button_detected == true && shower_heater_level <= 15) {
     shower_heater_level = shower_heater_level + 1;
   }
 
   if (shower_heater_level > 0) {
+    // int is_water_empty = switch_float_status();
+
+    // if (switch_float_val == HIGH) {
+    //   Serial.print("Water out start! > ");
+    //   Serial.println(String(shower_heater_level));
+    //   shower_heater_state = 4; // water out start
+
+    //   relay_high(3);
+    //   shower_heater_waterout_start_millis = current_millis;
+
+    // }
+
     if (shower_heater_state == 1 && is_switch_button_detected == true) {
-      Serial.print("Water in! > ");
-      Serial.println(String(shower_heater_level));
-      shower_heater_state = 2; // water in
-      relay_low(1);
-      relay_high(2);
-    } else if (shower_heater_state == 2 && is_switch_float_detected == true) {
       
-      Serial.print("Boiling! > ");
-      Serial.println(String(shower_heater_level));
-      shower_heater_state = 3; // boiling
-
-      setServoAngle(15, servoAngle + 26); // turn on switch at 26 degree
-
-      relay_low(2);
-      shower_heater_boiling_start_millis = current_millis;
-    } else if (shower_heater_state == 3 && current_millis - shower_heater_boiling_start_millis > shower_heater_boiling_period) {
-      Serial.print("Water out! > ");
-      Serial.println(String(shower_heater_level));
-      shower_heater_state = 4; // water out
-
       setServoAngle(15, servoAngle); // turn off switch
 
-      relay_high(3);
-      shower_heater_waterout_start_millis = current_millis;
-    } else if (shower_heater_state == 4 && current_millis - shower_heater_waterout_start_millis > shower_heater_waterout_period) {
-      
-      shower_heater_level = shower_heater_level - 1;
-
-      if (shower_heater_level > 0) { // loop
+      if (switch_float_val == LOW) {
         Serial.print("Water in! > ");
         Serial.println(String(shower_heater_level));
-        shower_heater_state = 2; // water in
         relay_low(1);
         relay_high(2);
         relay_low(3);
-      } else {
-        Serial.print("Success! > ");
+        shower_heater_state = 2; // water in
+      } else if (switch_float_val == HIGH) {
+        Serial.print("Water out start! > ");
         Serial.println(String(shower_heater_level));
-        shower_heater_state = 1; // Success
-        relay_high(1);
-        relay_low(3);
+
+        relay_low(1);
+        relay_low(2);
+        relay_high(3);
+        shower_heater_waterout_start_millis = current_millis;
+        shower_heater_state = 4; // water out start
       }
+    } else if (switch_float_val == HIGH && shower_heater_state == 2) { // && is_switch_float_detected == true
       
+      Serial.print("Boiling! > ");
+      Serial.println(String(shower_heater_level));
+      setServoAngle(15, servoAngle + 28); // turn on switch at 26 degree
+
+      relay_low(1);
+      relay_low(2);
+      relay_low(3);
+      shower_heater_boiling_start_millis = current_millis;
+      shower_heater_state = 3; // boiling
+    } else if (shower_heater_state == 3 && current_millis - shower_heater_boiling_start_millis > shower_heater_boiling_period) {
+      Serial.print("Water out start! > ");
+      Serial.println(String(shower_heater_level));
+
+      setServoAngle(15, servoAngle); // turn off switch
+      relay_low(1);
+      relay_low(2);
+      relay_high(3);
+      shower_heater_waterout_start_millis = current_millis;
+      shower_heater_state = 4; // water out start
+    } else if (shower_heater_state == 4 && current_millis - shower_heater_waterout_start_millis > shower_heater_waterout_period) {
+      // float water_out_per_min = waterflow_rate();
+
+      // if (water_out_per_min == 0.0) {
+        Serial.print("Water out end!> ");
+        // Serial.println(String(water_out_per_min));
+        setServoAngle(15, servoAngle); // turn off switch
+        relay_low(1);
+        relay_low(2);
+        relay_low(3);
+        shower_heater_waterout_end_millis = current_millis;
+        shower_heater_state = 5; // water out end
+        
+        // waterflow_reset();
+      // }
+      
+    } else if (shower_heater_state == 5 && current_millis - shower_heater_waterout_end_millis > shower_heater_waterout_end_period) {
+      
+      // float water_out_per_min = waterflow_rate();
+
+      // if (water_out_per_min == 0.0) {
+        shower_heater_level = shower_heater_level - 1;
+
+        if (shower_heater_level > 0) { // loop
+          setServoAngle(15, servoAngle); // turn off switch
+          Serial.print("Water in! > ");
+          Serial.println(String(shower_heater_level));
+          relay_low(1);
+          relay_high(2);
+          relay_low(3);
+          shower_heater_state = 2; // water in
+        } else {
+          setServoAngle(15, servoAngle); // turn off switch
+          Serial.print("Success! > ");
+          Serial.println(String(shower_heater_level));
+          relay_high(1);
+          relay_low(2);
+          relay_low(3);
+          shower_heater_state = 1; // Success
+        }
+      // }
+      
+      
+    }
+
+    if (switch_float_val == LOW && shower_heater_state == 3) { // check boiling
+      setServoAngle(15, servoAngle); // turn off switch
+
+      relay_low(1);
+      relay_low(2);
+      relay_high(3);
+      shower_heater_waterout_start_millis = current_millis;
+      shower_heater_state = 4; // water out start
     }
   }
   
@@ -207,18 +287,25 @@ void loop() {
   //     char input = Serial.read();
 
   //     if (input == '1') {
-  //       relay_toggle(1);
+  //       // setServoAngle(15, servoAngle); // turn off switch
   //     } else if (input == '2') {
-  //       relay_toggle(2);
+  //       shower_heater_state = 2; // water in
+  //       // relay_low(1);
+  //       // relay_high(2);
+
+  //       // setServoAngle(15, servoAngle + 28); // turn on switch at 26 degree
   //     } else if (input == '3') {
-  //       relay_toggle(3);
+  //       shower_heater_state = 3; // boiling
+  //       // relay_toggle(3);
   //     } else if (input == '4') {
-  //       relay_toggle(4);
+  //       shower_heater_state = 4; // water out start
+  //       // relay_toggle(4);
   //     } else if (input == '5') {
-  //       relay_toggle(5);
+  //       shower_heater_state = 5; // water out end
+  //       // relay_toggle(5);
   //     }
   // }
-  // delay(1);
+  delay(1);
 
   //  for (int pulse = servoMin; pulse < servoMax; pulse++){
   //   // ควบคุมเซอร์โวที่ CH0 และ CH15
@@ -232,6 +319,6 @@ void loop() {
   //   // ควบคุมเซอร์โวที่ CH0 และ CH15
   //   // pwm.setPWM(0, 0, pulse);
   //   pwm.setPWM(15, 0, pulse);
-  delay(100);
+  // delay(100);
   // }
 }

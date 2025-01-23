@@ -1,8 +1,8 @@
 
-#define switch_float_pin 3
+#define switch_float_pin 8
 
 bool switch_float_flg_initialized = false;
-int switch_float_val = 0;
+
 int switch_float_state = LOW; 
 
 unsigned long switch_float_previous_millis_1 = 0;
@@ -32,18 +32,23 @@ bool switch_float_start(unsigned long current_millis) {
   // Serial.print("switch_float_val: ");
   // Serial.println(String(switch_float_val));
 
-  if (switch_float_val == LOW) {           // check if the sensor is LOW
-    if (switch_float_state == HIGH) {
-      switch_float_state = LOW;       // update variable switch_float_state to LOW
-    }
-  } else {
-      delay(200);             // delay 200 milliseconds 
-      if (switch_float_state == LOW){
-      Serial.println("switch_float detected!"); 
-        // Serial.println("Motion stopped!");
-        switch_float_state = HIGH;       // update variable state to HIGH
-      return true;
-    }
-  }
+  // if (switch_float_val == LOW) {           // check if the sensor is LOW
+  //   if (switch_float_state == HIGH) {
+  //     switch_float_state = LOW;       // update variable switch_float_state to LOW
+  //   }
+  // } else {
+  //     delay(200);             // delay 200 milliseconds 
+  //     if (switch_float_state == LOW){
+  //     Serial.println("switch_float detected!"); 
+  //       // Serial.println("Motion stopped!");
+  //       switch_float_state = HIGH;       // update variable state to HIGH
+  //     return true;
+  //   }
+  // }
   return false;
+}
+
+
+int switch_float_status() {
+  return switch_float_val;
 }
